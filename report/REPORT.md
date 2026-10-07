@@ -2,8 +2,8 @@
 
 > Thay **mọi** ô có chữ ĐIỀN nằm trong ngoặc vuông bằng nội dung của bạn, xoá luôn cả dấu ngoặc vuông. Lệnh `python tools/check_submission.py` sẽ báo FAIL nếu còn sót bất kỳ chỗ nào.
 
-- **Họ tên:** Phung Quang Minh Huy
-- **MSSV:** 2A202602610 (phải trùng với MSSV trong tên repo `<HoVaTen>-<MSSV>-Track4-Day21`)
+- **Họ tên:** Phùng Quang Minh Huy
+- **MSSV:** 2A202602610
 - **Lớp:** AI20K — Track 4 (Computer Vision and Robotics)
 - **Link repo:** https://github.com/huy20/PhungQuangMinhHuy-2A202602610-Track4-Day21
 - **Topic:** F — Hỗ trợ gán nhãn bằng LiDAR (auto-label support)
@@ -51,7 +51,11 @@ Use-case cụ thể (ADAS / robot / drone), trade-off và bước tiếp theo.
 Các lệnh tái tạo lại toàn bộ kết quả từ repo sạch.
 
 ```bash
-[ĐIỀN]
+# CP2 - demo đầu tiên (sau khi đã viết 2 hàm TODO(CP2) trong starter/projection.py)
+python -m starter.projection --data-root data/synthetic --frame 000000
+python -m starter.projection --data-root data/kitti_mini --frame 000011
+python -m starter.projection --data-root data/nuscenes_mini_subset --frame scene-0103_010
+# ảnh overlay lưu vào results/figures/overlay_<frame>_*.png
 ```
 
 ## 6. Khai báo sử dụng AI
