@@ -1,22 +1,26 @@
-# Báo cáo Day 6: [ĐIỀN tên đề tài ngắn]
+# Báo cáo Day 6: Hỗ trợ gán nhãn 2D bằng LiDAR (topic F)
 
 > Thay **mọi** ô có chữ ĐIỀN nằm trong ngoặc vuông bằng nội dung của bạn, xoá luôn cả dấu ngoặc vuông. Lệnh `python tools/check_submission.py` sẽ báo FAIL nếu còn sót bất kỳ chỗ nào.
 
-- **Họ tên:** [ĐIỀN]
-- **MSSV:** [ĐIỀN] (phải trùng với MSSV trong tên repo `<HoVaTen>-<MSSV>-Track4-Day21`)
-- **Lớp:** [ĐIỀN]
-- **Link repo:** [ĐIỀN]
-- **Topic:** [ĐIỀN một chữ cái A/B/C/D/E/F] — [ĐIỀN tên topic]
-- **Dataset:** [ĐIỀN một hoặc nhiều trong: data/synthetic, data/kitti_mini, data/nuscenes_mini_subset, log riêng]
-- **Các frame đã dùng:** [ĐIỀN danh sách frame id, ví dụ 000011, 000049 hoặc scene-0103_010]
+- **Họ tên:** Phung Quang Minh Huy
+- **MSSV:** 2A202602610 (phải trùng với MSSV trong tên repo `<HoVaTen>-<MSSV>-Track4-Day21`)
+- **Lớp:** AI20K — Track 4 (Computer Vision and Robotics)
+- **Link repo:** https://github.com/huy20/PhungQuangMinhHuy-2A202602610-Track4-Day21
+- **Topic:** F — Hỗ trợ gán nhãn bằng LiDAR (auto-label support)
+- **Dataset:** data/synthetic (debug code), data/kitti_mini (thí nghiệm chính)
+- **Các frame đã dùng:** synthetic 000000; KITTI 000001 (cyclist), 000008 (đông xe), 000009 (xe xa > 50 m), 000011 (nhiều người đi bộ), 000025 (vật rất gần < 6 m), 000049 (nhiều vật bị che khuất)
 
 > Hãy viết ngắn: mỗi mục từ 3 đến 8 dòng, ưu tiên số liệu và hình ảnh.
 
 ## 1. Claim
 
-Một câu khẳng định kỹ thuật có thể kiểm chứng. Ví dụ: *"Lệch yaw 1° làm 12% điểm LiDAR rơi ra khỏi vật thể ở 30 m, phát hiện được bằng edge-alignment score với ngưỡng X."*
+**Claim nháp (CP1):** Trên `data/kitti_mini`, khi dùng calibration gốc, box 2D dựng từ các điểm LiDAR nằm trong 3D box GT đạt **IoU trung bình ≥ 0.80** so với box 2D GT cho `Car`/`Pedestrian` ở dải 5–30 m; chỉ lệch yaw **1°** đã làm **IoU trung bình giảm ≥ 0.10** và đẩy **tỉ lệ object có IoU < 0.7 lên trên 30%**, đủ để dùng **ngưỡng IoU 0.7** làm cờ "label cần review".
 
-[ĐIỀN]
+**Diễn giải đo gì – trên frame nào – với mức nào:**
+- **Đo:** IoU giữa box 2D gợi ý và box 2D GT (`label_2`), theo từng object và trung bình mỗi cấu hình.
+- **So sánh 2 cách:** (A) chiếu 8 góc 3D box (`box3d_corners_cam`) vs (B) min/max điểm LiDAR đã chiếu nằm trong 3D box.
+- **Mức thay đổi:** calibration yaw ∈ {0°, 0.5°, 1°, 2°, 3°} (mỗi lần chỉ đổi 1 yếu tố), cộng thêm dịch `tx/ty/tz` = 5 cm ở bước sau.
+- **Frames:** 000001, 000008, 000009, 000011, 000025, 000049; debug trên `data/synthetic/000000`.
 
 ## 2. Evidence
 
