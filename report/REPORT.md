@@ -46,11 +46,22 @@ Số liệu đầy đủ: `results/auto_label_iou_summary.csv` (theo cấu hình
 
 ## 3. Failure case
 
-Nêu khi nào hệ thống hoặc phương pháp fail, vì sao fail, và liên hệ tới lớp nào trong 6 lớp debug: I/O, Geometry, Time, Preprocess, Model, Metric.
+Tìm được **2 failure case bù trừ nhau** — không cách nào robust một mình: cách A (8 góc) fail với vật gần/bị cắt ở rìa ảnh, cách B (điểm LiDAR) fail với vật xa. Trong ảnh: GT (xanh lá), A (cam), B (xanh dương).
 
-![failure](../results/figures/fail_[ĐIỀN].png)
+**Fail 01 — 000011 obj4 (Car, 6.8 m): A bị bỏ, B vẫn dùng được.**
+![failure near](../results/figures/fail_01_near_object_truncated.png)
+- **Khi nào:** vật rất gần và bị cắt ở rìa ảnh; 2D box GT = `[0, 217, 86, 374]` chạm biên trái và đáy. Cả 8 góc 3D box đều nằm trước camera (z>0) nhưng chỉ **1/8 góc** chiếu vào trong ảnh; cách A cần ≥4 góc trong ảnh nên bị **bỏ (valid=0 → IoU 0)**, trong khi B từ 3251 điểm LiDAR vẫn đạt IoU 0.69.
+- **Vì sao:** vật gần làm các góc box chiếu ra ngoài khung (một phần box ngoài FOV / sau biên). Điều kiện "≥4 góc nằm trong ảnh" của A sai với vật truncated.
+- **Lớp debug:** **Geometry** (truncation/FOV — box chiếu ra ngoài rìa), kèm yếu tố **Metric** (ngưỡng đếm góc là quy tắc đo của mình, không phải lỗi dữ liệu).
+- **Phát hiện/khắc phục:** dùng cờ `truncated`/`occluded` trong label và kiểm tra box so với biên ảnh; với vật chạm biên, clip box theo ảnh rồi fallback sang điểm LiDAR, hoặc hạ điều kiện còn ≥2 góc. Log cờ "truncated" để reviewer xem tay.
 
-[ĐIỀN]
+**Fail 02 — 000009 obj2 (Car, 68.3 m): A tốt, B bị bỏ.**
+![failure far](../results/figures/fail_02_far_object_no_points.png)
+- **Khi nào:** vật xa 68 m, 2D box chỉ 23×15 px; chỉ **1 điểm LiDAR** rơi trong 3D box (cần ≥2) nên B bị **bỏ (IoU 0)**, còn A đạt IoU 0.98.
+- **Vì sao:** mật độ điểm giảm theo bình phương khoảng cách; LiDAR 64 tia không đủ điểm trên vật nhỏ/xa. Lớp **Preprocess** (mật độ điểm/range — bước chọn điểm hết dữ liệu), có phần **Geometry** (tiêu chí "điểm trong 3D box" quá chặt khi box nhỏ).
+- **Phát hiện/khắc phục:** ngưỡng theo khoảng cách — object > ~50 m thì chuyển sang cách A, hoặc gộp điểm lân cận (dilate box); ghi log số điểm/box theo range để biết khi nào B không đáng tin.
+
+**Bài học chung:** dùng A làm mặc định, chỉ chuyển sang B khi đủ điểm (hoặc để B QA A); luôn gắn cờ object truncated/xa thay vì tin hoàn toàn box tự động. Lệnh tạo ảnh: `python src/make_failure_figure.py --frame 000011 --obj-index 4 --out results/figures/fail_01_near_object_truncated.png` (tương tự cho fail 02, `--frame 000009 --obj-index 2`).
 
 ## 4. Khuyến nghị nếu triển khai thật
 
@@ -73,6 +84,10 @@ python -m starter.projection --data-root data/nuscenes_mini_subset --frame scene
 python src/auto_label_iou.py --data-root data/kitti_mini
 # -> results/auto_label_iou_summary.csv, results/auto_label_iou_per_object.csv,
 #    results/figures/auto_label_iou_vs_yaw.png
+
+# CP4 - ve 2 anh failure case
+python src/make_failure_figure.py --frame 000011 --obj-index 4 --out results/figures/fail_01_near_object_truncated.png
+python src/make_failure_figure.py --frame 000009 --obj-index 2 --out results/figures/fail_02_far_object_no_points.png
 ```
 
 ## 6. Khai báo sử dụng AI
