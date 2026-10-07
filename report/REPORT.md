@@ -1,7 +1,5 @@
 # Báo cáo Day 6: Hỗ trợ gán nhãn 2D bằng LiDAR (topic F)
 
-> Thay **mọi** ô có chữ ĐIỀN nằm trong ngoặc vuông bằng nội dung của bạn, xoá luôn cả dấu ngoặc vuông. Lệnh `python tools/check_submission.py` sẽ báo FAIL nếu còn sót bất kỳ chỗ nào.
-
 - **Họ tên:** Phùng Quang Minh Huy
 - **MSSV:** 2A202602610
 - **Lớp:** AI20K — Track 4 (Computer Vision and Robotics)
@@ -65,9 +63,16 @@ Tìm được **2 failure case bù trừ nhau** — không cách nào robust m�
 
 ## 4. Khuyến nghị nếu triển khai thật
 
-Use-case cụ thể (ADAS / robot / drone), trade-off và bước tiếp theo.
+**Use-case:** hỗ trợ gán nhãn/QA cho pipeline ADAS và xe tự hành — dùng LiDAR để kiểm tra (QA) 2D box camera trước khi đưa người gán nhãn review (giảm thời gian label), và dùng như tín hiệu **self-diagnostic**: phát hiện calibration LiDAR-camera lệch sau va chạm nhẹ.
 
-[ĐIỀN]
+**Đánh đổi khi triển khai:**
+- **Chính xác vs tốc độ:** cách A (8 góc) chỉ ~8 phép chiếu, cực nhanh nhưng fail với vật gần/truncated; cách B (điểm LiDAR trong box) đắt hơn (tuyến tính theo số điểm) và fail với vật xa. Chạy song song an toàn hơn nhưng tăng compute gần gấp đôi → trên xe nên chạy A liên tục, B theo lô/offline.
+- **An toàn:** IoU là chỉ báo, **không** dùng để tự động sửa calibration; ngưỡng IoU 0.7 báo drift ≥1° để kỹ thuật viên kiểm tra. Tránh để box tự động ghi đè label GT.
+- **Tài nguyên:** topic F chạy CPU là đủ (không cần GPU), hợp với pipeline gán nhãn offline hoặc chip onboard nhỏ.
+
+**Chỉ số cần ghi log khi chạy thật:** IoU per-object tách theo `class` và theo dải range; số điểm LiDAR trong mỗi 3D box; tỉ lệ object `truncated`/`occluded`; ước lượng drift (yaw/pitch/roll) và cờ khi vượt ngưỡng; `timestamp_camera - timestamp_lidar` để theo dõi đồng bộ; tỉ lệ frame gắn cờ "cần review".
+
+**Bước tiếp theo:** (1) chỉ chạy cách B khi số điểm trong box ≥ ngưỡng và range < 50 m; (2) thiết kế alignment score (khớp cạnh depth với Canny) thay cho ngưỡng IoU thô (mức Advanced của topic); (3) chạy lại cùng thí nghiệm trên `data/nuscenes_mini_subset` (bonus B5) để so 64-beam/ngày với 32-beam/đêm.
 
 ## 5. Cách chạy lại
 
@@ -92,8 +97,7 @@ python src/make_failure_figure.py --frame 000009 --obj-index 2 --out results/fig
 
 ## 6. Khai báo sử dụng AI
 
-Ghi rõ đã dùng công cụ AI nào, dùng vào việc gì, và bạn đã tự kiểm chứng kết quả đó bằng cách nào. Nếu không dùng AI, ghi "Không sử dụng". Xem quy định ở `RULES.md` mục 2.
-
-| Công cụ | Dùng cho việc gì | Bạn đã kiểm chứng thế nào |
+| Công cụ | Dùng cho việc gì | Tôi đã kiểm chứng thế nào |
 |---|---|---|
-| [ĐIỀN] | | |
+| Kilo Code (AI assistant) | Viết nháp 2 hàm `TODO(CP2)` trong `starter/projection.py`, script `src/auto_label_iou.py` và `src/make_failure_figure.py`, và soạn nháp `report/REPORT.md` | Tự đọc lại từng hàm; chạy hand-check điểm `(10,0,0)` → `z_cam=9.727`, `uv=(614,175)`; chạy benchmark 2 lần cho kết quả giống hệt; đối chiếu bảng trong REPORT với file CSV; kiểm tra số liệu ảnh failure (`1/8` góc, `1` điểm LiDAR) khớp với output script |
+| Không dùng công cụ AI nào khác | — | — |
